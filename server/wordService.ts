@@ -58,10 +58,13 @@ export function isValidGuess(guess: string): boolean {
 	return allowedGuesses.has(guess.toLowerCase());
 }
 
-export function checkGuess(encrypdedWord: string, guess: string): object {
+export function checkGuess(
+	encrypdedWord: string,
+	guess: string
+): object | null {
 	if (!isValidGuess(guess)) {
 		console.warn("invalid guess: ", guess);
-		return {}; // Invalid guess.
+		return null; // Invalid guess.
 	}
 
 	const decodedWord = decryptWord(encrypdedWord);
@@ -95,7 +98,6 @@ export function checkGuess(encrypdedWord: string, guess: string): object {
 			);
 		}
 	}
-	console.log(`Freq map: ${letterCount} `);
 
 	// Second pass: set the flags for the letters that are in the word, but not in the correct place
 	for (let i = 0; i < 5; i++) {
