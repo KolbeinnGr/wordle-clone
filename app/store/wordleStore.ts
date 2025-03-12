@@ -18,24 +18,55 @@ interface WordleState {
 	) => void;
 	checkGuess: (guess: string) => Promise<void>;
 	resetGame: () => Promise<void>;
+	currentGuess: string;
+	setCurrentGuess: (guess: string) => void;
+	usedLetters: Record<string, "correct" | "misplaced" | "wrong">;
+	setUsedLetters: (
+		letters: Record<string, "correct" | "misplaced" | "wrong">
+	) => void;
 }
 
 export const useWordleStore = create<WordleState>((set, get) => ({
 	guessRows: [],
 	activeRow: 0,
+
 	encryptedWord: "",
 	setEncryptedWord: (word: string) => set({ encryptedWord: word }),
+
 	addGuess: (guess, correct, misplaced) =>
-		set((state) => ({
-			guessRows: [...state.guessRows, { guess, correct, misplaced }],
-			activeRow: state.activeRow + 1,
-		})),
+		set((state) => {
+			// Update usedLetters to reflect correct/misplaced/wrong letters
+			const newUsedLetters = { ...state.usedLetters };
+
+			guess.split("").forEach((letter, index) => {
+				if (correct[index] === 1) {
+					newUsedLetters[letter] = "correct";
+				} else if (
+					misplaced[index] === 1 &&
+					newUsedLetters[letter] !== "correct"
+				) {
+					newUsedLetters[letter] = "misplaced";
+				} else if (!newUsedLetters[letter]) {
+					newUsedLetters[letter] = "wrong";
+				}
+			});
+
+			return {
+				guessRows: [
+					...state.guessRows.slice(0, state.activeRow),
+					{ guess, correct, misplaced },
+					...state.guessRows.slice(state.activeRow + 1),
+				],
+				activeRow: state.activeRow + 1,
+				currentGuess: "",
+				usedLetters: newUsedLetters, // Update used letters
+			};
+		}),
+
 	checkGuess: async (guess: string) => {
 		// Get the encrypted word
 		const encryptedWord = get().encryptedWord;
 
-		// const encryptedWord =
-		// 	"175f34e17a5305a8ffc49b27caedaeec:c15dc92fc4229602f149d9ca8b7e0eb7";
 		try {
 			// Send the api request to check
 			const res = await fetch("/api/wordle/guess", {
@@ -57,6 +88,7 @@ export const useWordleStore = create<WordleState>((set, get) => ({
 			console.error("Error checking guess:", error);
 		}
 	},
+
 	resetGame: async () => {
 		try {
 			const res = await fetch("/api/wordle/");
@@ -70,4 +102,19 @@ export const useWordleStore = create<WordleState>((set, get) => ({
 			console.error("Error resetting game:", error);
 		}
 	},
+
+	currentGuess: "",
+	setCurrentGuess: (guess: string) =>
+		set(() => {
+			if (guess.length > 5) {
+				return {};
+			}
+			return { currentGuess: guess };
+		}),
+	usedLetters: {},
+
+	setUsedLetters: (letters) =>
+		set((state) => ({
+			usedLetters: { ...state.usedLetters, ...letters },
+		})),
 }));

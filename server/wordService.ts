@@ -20,7 +20,7 @@ const allowedGuesses = new Set([
 	...wordlist,
 ]);
 
-// 🔐 Encryption key stored in .env of length 32
+// Encryption key stored in .env of length 32
 const SECRET_KEY =
 	process.env.WORDLE_SECRET_KEY || "SUPERSECRETPASSKEYSUPERSECRETPASSK";
 
@@ -28,9 +28,9 @@ export function getRandomWord(): string {
 	return wordlist[Math.floor(Math.random() * wordlist.length)]; // random number between 0 and 1 multiplied by the array length
 }
 
-// 🔒 Encrypt the word (AES-256)
+// Encrypt the word
 export function encryptWord(word: string): string {
-	const iv = crypto.randomBytes(16); // Generate a random initialization vector
+	const iv = crypto.randomBytes(16);
 	const cipher = crypto.createCipheriv(
 		"aes-256-cbc",
 		Buffer.from(SECRET_KEY),
@@ -38,10 +38,10 @@ export function encryptWord(word: string): string {
 	);
 	let encrypted = cipher.update(word, "utf8", "hex");
 	encrypted += cipher.final("hex");
-	return iv.toString("hex") + ":" + encrypted; // Store IV with encrypted data
+	return iv.toString("hex") + ":" + encrypted;
 }
 
-// 🔓 Decrypt the word
+// Decrypt the word
 export function decryptWord(encryptedWord: string): string {
 	const [iv, encrypted] = encryptedWord.split(":");
 	const decipher = crypto.createDecipheriv(
@@ -88,7 +88,7 @@ export function checkGuess(
 		letterCount.set(char, (letterCount.get(char) ?? 0) + 1);
 	}
 
-	// First pass: set the flags for the correct letters (green)
+	// First pass: set the flags for the correct letters
 	for (let i = 0; i < 5; i++) {
 		if (decodedWord[i] == guess[i]) {
 			correct[i] = 1;
@@ -101,7 +101,7 @@ export function checkGuess(
 
 	// Second pass: set the flags for the letters that are in the word, but not in the correct place
 	for (let i = 0; i < 5; i++) {
-		// First we check if we have already set that flag in the first pass, if not we continue
+		// First we check if we have already set that flag in the first pass, so that we don't overwrite it as yellow
 		if (decodedWord[i] !== guess[i]) {
 			const count = letterCount.get(guess[i]) ?? 0;
 			if (count > 0) {
