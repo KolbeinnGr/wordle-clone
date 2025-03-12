@@ -15,9 +15,10 @@ export class GameManager {
 
 			let guessList: string[] = this.readFile("guesslist.txt");
 
+			// Create a new set for the allowedGuesses that contains both guesslist and wordlist.
 			this.allowedGuesses = Array.from(
 				new Set([...guessList, ...this.wordlist])
-			); // Create a new set for the allowedGuesses that contains both guesslist and wordlist.
+			);
 		} catch (error) {
 			console.error("Error reading file:", error);
 		}

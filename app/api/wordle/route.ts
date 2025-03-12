@@ -5,6 +5,7 @@ export async function GET() {
 	try {
 		const word = getRandomWord();
 		const encryptedWord = encryptWord(word);
+
 		return NextResponse.json({ encryptedWord }, { status: 200 });
 	} catch (error) {
 		console.error("Error getting new word:", error);

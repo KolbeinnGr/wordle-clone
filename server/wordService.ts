@@ -5,7 +5,7 @@ import crypto from "crypto";
 const WORDLIST_PATH = path.resolve(process.cwd(), "data/wordle/wordlist.txt");
 const ALLOWED_GUESSES_PATH = path.resolve(
 	process.cwd(),
-	"data/wordle/allowedGuesses.txt"
+	"data/wordle/guesslist.txt"
 );
 
 const wordlist = fs
@@ -20,11 +20,12 @@ const allowedGuesses = new Set([
 	...wordlist,
 ]);
 
-// 🔐 AES Encryption Key (Store securely in .env)
-const SECRET_KEY = process.env.WORDLE_SECRET_KEY || "SUPERSECRETPASSKEY"; // 32 chars
+// 🔐 Encryption key stored in .env of length 32
+const SECRET_KEY =
+	process.env.WORDLE_SECRET_KEY || "SUPERSECRETPASSKEYSUPERSECRETPASSK";
 
 export function getRandomWord(): string {
-	return wordlist[Math.floor(Math.random() * wordlist.length)];
+	return wordlist[Math.floor(Math.random() * wordlist.length)]; // random number between 0 and 1 multiplied by the array length
 }
 
 // 🔒 Encrypt the word (AES-256)
@@ -58,7 +59,10 @@ export function isValidGuess(guess: string): boolean {
 }
 
 export function checkGuess(encrypdedWord: string, guess: string): object {
-	if (!isValidGuess(guess)) return {}; // Invalid guess.
+	if (!isValidGuess(guess)) {
+		console.warn("invalid guess: ", guess);
+		return {}; // Invalid guess.
+	}
 
 	const decodedWord = decryptWord(encrypdedWord);
 	console.log(`Decoded word: ${decodedWord} - Guess: ${guess}`);
@@ -66,14 +70,14 @@ export function checkGuess(encrypdedWord: string, guess: string): object {
 	if (decodedWord === guess) {
 		return {
 			guess,
-			correct: [1, 1, 1, 1, 1],
-			misplaced: [0, 0, 0, 0, 0],
+			correct: new Array<number>(decodedWord.length).fill(1),
+			misplaced: new Array<number>(decodedWord.length).fill(0),
 		};
 	}
 
 	// Initalize the result arrays
-	let correct: number[] = [0, 0, 0, 0, 0];
-	let misplaced: number[] = [0, 0, 0, 0, 0];
+	let correct: number[] = new Array<number>(decodedWord.length).fill(0);
+	let misplaced: number[] = new Array<number>(decodedWord.length).fill(0);
 
 	// Build a frequency map for the letters in the word that the user is guessing
 	let letterCount: Map<string, number> = new Map<string, number>();
