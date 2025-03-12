@@ -1,34 +1,73 @@
 import { create } from "zustand";
 
-interface WordleState {
-	grid: string[][];
-	activeRow: number;
-	updateGuess: (guess: string) => void;
-	resetGame: () => void;
+interface GuessRow {
+	guess: string; // The guessed word
+	correct: number[]; // Array of flags, 0 if the letter is incorrect, 1 if it's correct
+	misplaced: number[]; // Array of flags, 0 if the letter is not in the word, 1 if it is and is not already set in correct flag
 }
 
-const NUM_ROWS = 6;
-const NUM_COLS = 5;
+interface WordleState {
+	encryptedWord: string;
+	setEncryptedWord: (word: string) => void;
+	guessRows: GuessRow[];
+	activeRow: number;
+	addGuess: (
+		currentGuess: string,
+		correct: number[],
+		misplaced: number[]
+	) => void;
+	checkGuess: (guess: string) => Promise<void>;
+	resetGame: () => Promise<void>;
+}
 
 export const useWordleStore = create<WordleState>((set, get) => ({
-	grid: Array.from({ length: NUM_ROWS }, () => Array(NUM_COLS).fill("")),
+	guessRows: [],
 	activeRow: 0,
-	updateGuess: (guess: string) => {
-		// don't allow the player to enter in a word that is not of right length or if they have made 6 guesses
-		if (guess.length !== NUM_COLS || get().activeRow >= NUM_ROWS) return;
+	encryptedWord: "",
+	setEncryptedWord: (word: string) => set({ encryptedWord: word }),
+	addGuess: (guess, correct, misplaced) =>
+		set((state) => ({
+			guessRows: [...state.guessRows, { guess, correct, misplaced }],
+			activeRow: state.activeRow + 1,
+		})),
+	checkGuess: async (guess: string) => {
+		// Get the encrypted word
+		const encryptedWord = get().encryptedWord;
 
-		set((state) => {
-			const newGrid = state.grid.map((row, i) =>
-				i === state.activeRow ? guess.split("") : row
-			);
-			return { grid: newGrid, activeRow: state.activeRow + 1 };
-		});
+		// const encryptedWord =
+		// 	"175f34e17a5305a8ffc49b27caedaeec:c15dc92fc4229602f149d9ca8b7e0eb7";
+		try {
+			// Send the api request to check
+			const res = await fetch("/api/wordle/guess", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ guess, encryptedWord }),
+			});
+			const data = await res.json();
+
+			// Result obj: { result: { guess: string, correct: number[], misplaced: number[] } }
+			if (data.result) {
+				get().addGuess(
+					data.result.guess,
+					data.result.correct,
+					data.result.misplaced
+				);
+			}
+		} catch (error) {
+			console.error("Error checking guess:", error);
+		}
 	},
-	resetGame: () =>
-		set({
-			grid: Array.from({ length: NUM_ROWS }, () =>
-				Array(NUM_COLS).fill("")
-			),
-			activeRow: 0,
-		}),
+	resetGame: async () => {
+		try {
+			const res = await fetch("/api/wordle/");
+			const data = await res.json();
+			set({
+				guessRows: [],
+				activeRow: 0,
+				encryptedWord: data.encryptedWord,
+			});
+		} catch (error) {
+			console.error("Error resetting game:", error);
+		}
+	},
 }));
