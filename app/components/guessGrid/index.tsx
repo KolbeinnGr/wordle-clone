@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useWordleStore } from "../../store/wordleStore";
 import Keyboard from "../keyboard";
 
@@ -8,11 +8,21 @@ const NUM_GUESSES = 6;
 const NUM_LETTERS = 5;
 
 export default function GuessGrid() {
-	const { guessRows, resetGame, currentGuess, activeRow } = useWordleStore();
+	const { guessRows, resetGame, currentGuess, activeRow, getDecryptedWord } =
+		useWordleStore();
+
+	const [showPopup, setShowPopup] = useState(true);
+	const [decryptedWord, setDecryptedWord] = useState("");
 
 	useEffect(() => {
 		resetGame();
 	}, [resetGame]);
+
+	useEffect(() => {
+		if (activeRow > 5) {
+			getDecryptedWord().then(setDecryptedWord); // Fetch and store decrypted word
+		}
+	}, [activeRow]);
 
 	const displayedRows = Array.from({ length: NUM_GUESSES }, (_, index) => {
 		// If it's the current active row we enter the letters in here.
@@ -39,8 +49,30 @@ export default function GuessGrid() {
 
 	return (
 		<div className="flex flex-col items-center space-y-8">
-			{/* Grid row block */}
-			<div className="space-y-1">
+			<div>
+				{/* Game over popup that shows if the player did not get the word in 6 tries. */}
+				{activeRow > 5 && showPopup && (
+					<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+						<div className="bg-white p-6 rounded-lg shadow-lg text-center relative">
+							<button
+								onClick={() => setShowPopup(false)}
+								className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+							>
+								✖
+							</button>
+							<h2 className="text-xl font-bold text-amber-500">
+								Better luck next time!
+							</h2>
+							<p className="mt-2 text-slate-800">
+								The word was:{" "}
+								<span className="font-bold text-blue-600">
+									{decryptedWord}
+								</span>
+							</p>
+						</div>
+					</div>
+				)}
+				{/* Grid row block */}
 				{displayedRows.map((row, rowIndex) => (
 					<div
 						key={rowIndex}
@@ -77,8 +109,23 @@ export default function GuessGrid() {
 					</div>
 				))}
 			</div>
-
-			<Keyboard />
+			{(guessRows.length > 0 &&
+				guessRows[guessRows.length - 1].correct.every(
+					(c) => c === 1
+				)) ||
+			activeRow > 5 ? (
+				<button
+					onClick={() => {
+						resetGame();
+						setShowPopup(true);
+					}}
+					className="px-6 py-3 bg-blue-500 text-white rounded text-lg font-bold mt-4"
+				>
+					Play Again
+				</button>
+			) : (
+				<Keyboard />
+			)}
 		</div>
 	);
 }

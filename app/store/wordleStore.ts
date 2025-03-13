@@ -1,3 +1,4 @@
+import { decryptWord } from "@/server/wordService";
 import { create } from "zustand";
 
 interface GuessRow {
@@ -9,21 +10,27 @@ interface GuessRow {
 interface WordleState {
 	encryptedWord: string;
 	setEncryptedWord: (word: string) => void;
+
 	guessRows: GuessRow[];
 	activeRow: number;
+
 	addGuess: (
 		currentGuess: string,
 		correct: number[],
 		misplaced: number[]
 	) => void;
 	checkGuess: (guess: string) => Promise<void>;
-	resetGame: () => Promise<void>;
 	currentGuess: string;
 	setCurrentGuess: (guess: string) => void;
+
+	resetGame: () => Promise<void>;
+
 	usedLetters: Record<string, "correct" | "misplaced" | "wrong">;
 	setUsedLetters: (
 		letters: Record<string, "correct" | "misplaced" | "wrong">
 	) => void;
+
+	getDecryptedWord: () => Promise<string>;
 }
 
 export const useWordleStore = create<WordleState>((set, get) => ({
@@ -97,6 +104,7 @@ export const useWordleStore = create<WordleState>((set, get) => ({
 				guessRows: [],
 				activeRow: 0,
 				encryptedWord: data.encryptedWord,
+				usedLetters: {},
 			});
 		} catch (error) {
 			console.error("Error resetting game:", error);
@@ -117,4 +125,24 @@ export const useWordleStore = create<WordleState>((set, get) => ({
 		set((state) => ({
 			usedLetters: { ...state.usedLetters, ...letters },
 		})),
+
+	getDecryptedWord: async () => {
+		try {
+			const encryptedWord = get().encryptedWord;
+
+			const res = await fetch("/api/wordle/decryptWord", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ encryptedWord }),
+			});
+
+			if (!res.ok) throw new Error("Failed to decrypt word");
+
+			const data = await res.json();
+			return data.decryptedWord as string;
+		} catch (error) {
+			console.log("Error decrypting wrod: ", error);
+			return "";
+		}
+	},
 }));
