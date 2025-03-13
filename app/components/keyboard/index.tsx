@@ -10,11 +10,11 @@ export default function Keyboard() {
 		useWordleStore();
 
 	const handleKeyPress = (key: string) => {
-		if (key === "Enter") {
+		if (key === "Enter" || key === "ENTER") {
 			if (currentGuess.length === 5) {
 				checkGuess(currentGuess.toLowerCase());
 			}
-		} else if (key === "Backspace") {
+		} else if (key === "Backspace" || key === "DELETE") {
 			setCurrentGuess(currentGuess.slice(0, -1));
 		} else if (/^[a-zA-Z]$/.test(key)) {
 			// Only allow alphabet characters
