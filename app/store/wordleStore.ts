@@ -31,6 +31,9 @@ interface WordleState {
 	) => void;
 
 	getDecryptedWord: () => Promise<string>;
+
+	error: string;
+	setError: (error: string) => void;
 }
 
 export const useWordleStore = create<WordleState>((set, get) => ({
@@ -84,15 +87,20 @@ export const useWordleStore = create<WordleState>((set, get) => ({
 			const data = await res.json();
 
 			// Result obj: { result: { guess: string, correct: number[], misplaced: number[] } }
+			console.log("Guess result: ", data);
 			if (data.result) {
 				get().addGuess(
 					data.result.guess,
 					data.result.correct,
 					data.result.misplaced
 				);
+				get().setError(""); // Clear error if guess is valid
+			} else {
+				get().setError("Invalid guess. Please try again.");
 			}
 		} catch (error) {
 			console.error("Error checking guess:", error);
+			get().setError("An error occurred. Please try again.");
 		}
 	},
 
@@ -145,4 +153,7 @@ export const useWordleStore = create<WordleState>((set, get) => ({
 			return "";
 		}
 	},
+
+	error: "",
+	setError: (error: string) => set({ error }),
 }));

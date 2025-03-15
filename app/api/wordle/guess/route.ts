@@ -9,6 +9,11 @@ export async function POST(req: Request) {
 
 		if (result) {
 			return NextResponse.json({ result }, { status: 200 });
+		} else {
+			return NextResponse.json(
+				{ error: "Invalid guess" },
+				{ status: 400 }
+			);
 		}
 	} catch (error) {
 		console.error("Error validating guess:", error);

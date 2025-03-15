@@ -3,16 +3,26 @@
 import React, { useEffect, useState } from "react";
 import { useWordleStore } from "../../store/wordleStore";
 import Keyboard from "../keyboard";
+import "../../styles/animations.css"; // Import the CSS file
 
 const NUM_GUESSES = 6;
 const NUM_LETTERS = 5;
 
 export default function GuessGrid() {
-	const { guessRows, resetGame, currentGuess, activeRow, getDecryptedWord } =
-		useWordleStore();
+	const {
+		guessRows,
+		resetGame,
+		currentGuess,
+		activeRow,
+		getDecryptedWord,
+		error,
+		setError,
+	} = useWordleStore();
 
 	const [showPopup, setShowPopup] = useState(true);
 	const [decryptedWord, setDecryptedWord] = useState("");
+	const [shake, setShake] = useState(false);
+	const [spin, setSpin] = useState(false);
 
 	useEffect(() => {
 		resetGame();
@@ -20,12 +30,35 @@ export default function GuessGrid() {
 
 	useEffect(() => {
 		if (activeRow > 5) {
-			getDecryptedWord().then(setDecryptedWord); // Fetch and store decrypted word
+			getDecryptedWord().then(setDecryptedWord);
 		}
 	}, [activeRow]);
 
+	useEffect(() => {
+		if (error) {
+			setShake(true);
+			const timer = setTimeout(() => {
+				setError("");
+				setShake(false);
+			}, 2000);
+			return () => clearTimeout(timer);
+		}
+	}, [error, setError]);
+
+	useEffect(() => {
+		if (
+			guessRows.length > 0 &&
+			guessRows[guessRows.length - 1].correct.every((c) => c === 1)
+		) {
+			setSpin(true);
+			const timer = setTimeout(() => {
+				setSpin(false);
+			}, 500);
+			return () => clearTimeout(timer);
+		}
+	}, [guessRows]);
+
 	const displayedRows = Array.from({ length: NUM_GUESSES }, (_, index) => {
-		// If it's the current active row we enter the letters in here.
 		if (index === activeRow) {
 			return {
 				guess: currentGuess.padEnd(NUM_LETTERS, " "),
@@ -34,12 +67,10 @@ export default function GuessGrid() {
 			};
 		}
 
-		// Show previous guesses
 		if (index < guessRows.length) {
 			return guessRows[index];
 		}
 
-		// Empty rows
 		return {
 			guess: "     ",
 			correct: Array(NUM_LETTERS).fill(0),
@@ -48,9 +79,13 @@ export default function GuessGrid() {
 	});
 
 	return (
-		<div className="flex flex-col items-center space-y-8">
-			<div>
-				{/* Game over popup that shows if the player did not get the word in 6 tries. */}
+		<div className="relative flex flex-col items-center space-y-8">
+			{error && (
+				<div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-red-500 text-white p-2 rounded">
+					{error}
+				</div>
+			)}
+			<div className={shake ? "shake" : ""}>
 				{activeRow > 5 &&
 					!guessRows[guessRows.length - 1]?.correct.every(
 						(c) => c === 1
@@ -77,7 +112,6 @@ export default function GuessGrid() {
 						</div>
 					)}
 
-				{/* Grid row block */}
 				{displayedRows.map((row, rowIndex) => (
 					<div
 						key={rowIndex}
@@ -104,7 +138,9 @@ export default function GuessGrid() {
 								return (
 									<div
 										key={colIndex}
-										className={`w-12 h-12 border-2 ${borderColor} flex items-center justify-center text-xl font-bold ${bgColor}`}
+										className={`w-15 h-15 border-2 ${borderColor} mt-1 flex items-center justify-center text-2xl font-bold ${bgColor} ${
+											spin ? "spin" : ""
+										}`}
 									>
 										{letter}
 									</div>
