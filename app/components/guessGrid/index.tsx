@@ -51,27 +51,32 @@ export default function GuessGrid() {
 		<div className="flex flex-col items-center space-y-8">
 			<div>
 				{/* Game over popup that shows if the player did not get the word in 6 tries. */}
-				{activeRow > 5 && showPopup && (
-					<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-						<div className="bg-white p-6 rounded-lg shadow-lg text-center relative">
-							<button
-								onClick={() => setShowPopup(false)}
-								className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-							>
-								✖
-							</button>
-							<h2 className="text-xl font-bold text-amber-500">
-								Better luck next time!
-							</h2>
-							<p className="mt-2 text-slate-800">
-								The word was:{" "}
-								<span className="font-bold text-blue-600">
-									{decryptedWord}
-								</span>
-							</p>
+				{activeRow > 5 &&
+					!guessRows[guessRows.length - 1]?.correct.every(
+						(c) => c === 1
+					) &&
+					showPopup && (
+						<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+							<div className="bg-white p-6 rounded-lg shadow-lg text-center relative">
+								<button
+									onClick={() => setShowPopup(false)}
+									className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+								>
+									✖
+								</button>
+								<h2 className="text-xl font-bold text-amber-500">
+									Better luck next time!
+								</h2>
+								<p className="mt-2 text-slate-800">
+									The word was:{" "}
+									<span className="font-bold text-blue-600">
+										{decryptedWord}
+									</span>
+								</p>
+							</div>
 						</div>
-					</div>
-				)}
+					)}
+
 				{/* Grid row block */}
 				{displayedRows.map((row, rowIndex) => (
 					<div
